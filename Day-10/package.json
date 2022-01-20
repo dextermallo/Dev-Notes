@@ -1,0 +1,18 @@
+{
+  "name": "SWE-Question-Daily-Day-10",
+  "version": "1.0.0",
+  "description": "Implementation of Day 10 Question",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --runInBand"
+  },
+  "dependencies": {
+    "@types/jest": "^27.0.2",
+    "@types/node": "^13.9.2",
+    "dotenv": "^10.0.0",
+    "ts-jest": "^27.0.7"
+  },
+  "devDependencies": {
+    "typescript": "^3.3.3"
+  }
+}
