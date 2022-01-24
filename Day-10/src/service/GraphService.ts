@@ -1,3 +1,4 @@
+import { LWWService } from '../interface/LWWService';
 import { GraphServiceError } from '../error/GraphServiceError';
 import { Edge, Vertex } from '../models';
 
@@ -38,7 +39,7 @@ import { Edge, Vertex } from '../models';
  * graphService.findPathBetweenVertices(5, 1); // [5, 4, 1]
  * ```
  */
-export class GraphService {
+export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description GraphService stores its vertex and edge in attribute `graph`.
@@ -64,11 +65,12 @@ export class GraphService {
      *  1. the given vertex already exists
      *  2. the given vertex is NaN
      */
-    addVertex(vertex: Vertex) {
+    addVertex(vertex: Vertex, saveState: boolean = true) {
         if (isNaN(vertex)) { throw GraphServiceError.vertex.add.isNaN; }
 
         if (this.graph[vertex] === undefined) {
             this.graph[vertex] = new Set<number>();
+            if (saveState) {  this.add(vertex); }
         } else {
             throw GraphServiceError.vertex.add.isDuplicate;
         }
@@ -81,21 +83,10 @@ export class GraphService {
      *  2. the given edge contains at least one NaN
      *  3. the given edge already exists
      */
-    addEdge(edge: Edge) {
-
-        if (edge[0] === edge[1]) {
-            throw GraphServiceError.edge.add.shouldHaveDifferentVertex;
-        }
-
-        if (isNaN(edge[0]) || isNaN(edge[1])) {
-            throw GraphServiceError.edge.add.containNaN;
-        }
-
-        if (
-            this.graph[edge[0]] && this.graph[edge[0]].has(edge[1])
-        && this.graph[edge[1]] && this.graph[edge[1]].has(edge[0])) {
-            throw GraphServiceError.edge.add.isDuplicate
-        }
+    addEdge(edge: Edge, saveState: boolean = true) {
+        if (edge[0] === edge[1]) { throw GraphServiceError.edge.add.shouldHaveDifferentVertex; }
+        if (isNaN(edge[0]) || isNaN(edge[1])) { throw GraphServiceError.edge.add.containNaN; }
+        if (this.edgeIsExist(edge)) { throw GraphServiceError.edge.add.isDuplicate; }
 
         // if any of the vertex in the given edge is not exist,
         // create a vertex automatically
@@ -104,6 +95,8 @@ export class GraphService {
 
         this.graph[edge[0]].add(edge[1]);
         this.graph[edge[1]].add(edge[0]);
+        
+        if (saveState) { this.add(edge); }
     }
 
     /**
@@ -111,17 +104,19 @@ export class GraphService {
      * @param vertex - `required`. Error will be thrown if:
      *  1. vertex is not exist 
      */
-    removeVertex(vertex: Vertex) {
-
-        if (!this.vertexIsExist(vertex)) {
-            throw GraphServiceError.vertex.remove.vertexNotFound;
-        }
+    removeVertex(vertex: Vertex, saveState: boolean = true) {
+        if (!this.vertexIsExist(vertex)) { throw GraphServiceError.vertex.remove.vertexNotFound; }
 
         for (const v of this.graph[vertex]) {
             // remove corresponding edge
             this.graph[v].delete(vertex);
+            if (saveState) {
+                this.remove([v, vertex]);
+                this.remove([vertex, v]);
+            }
         }
         delete this.graph[vertex]; 
+        if (saveState) { this.remove(vertex); }
     }
 
     /**
@@ -129,10 +124,12 @@ export class GraphService {
      * @param edge - `required`. Error will be thrown if:
      *  1. edge is not exist
      */
-    removeEdge(edge: Edge) {
+    removeEdge(edge: Edge, saveState: boolean = true) {
         if (!this.edgeIsExist(edge)) { throw GraphServiceError.edge.remove.edgeIsNotExist; }
         this.graph[edge[0]].delete(edge[1]);
         this.graph[edge[1]].delete(edge[0]);
+        
+        if (saveState) { this.remove(edge); }
     }
 
     /**
@@ -203,11 +200,22 @@ export class GraphService {
         return { find: false };
     }
 
-    /**
-     * @description to merge another graph with the existing graph
-     * @todo - the function is not implemented yet
-     */
-    merge() {
-
+    postMergeFn(): void | Promise<void> {
+        this.graph = [];
+        for (let [element, _] of this.addSet) {
+            const transElement = JSON.parse(element) as Edge | Vertex;
+            if (this.lookup(transElement)) {
+                if (this.isVertex(transElement) && !this.vertexIsExist(transElement as Vertex)) {
+                    this.addVertex(transElement as Vertex, false);
+                } else if (this.isEdge(transElement) && !this.edgeIsExist(transElement as Edge)){
+                    this.addEdge(transElement as Edge, false);
+                }
+            }
+        }
     }
+
+    private isVertex = (obj: any) => typeof(obj) === 'number';
+
+    private isEdge =(obj: any): boolean => 
+        Array.isArray(obj) && obj.length === 2 && typeof(obj[0]) === 'number' && typeof(obj[1]) === 'number';
 }

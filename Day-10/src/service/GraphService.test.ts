@@ -148,6 +148,33 @@ describe('GraphService/vertexIsExist', () => {
         expect(graphService.vertexIsExist(1)).toBeFalsy();
         expect(graphService.vertexIsExist(2)).toBeFalsy();
     });
+
+    test('functionality should work after running GraphService/merge', async () => {
+        const graphServiceA = new GraphService();
+        const graphServiceB = new GraphService();
+
+        graphServiceA.addVertex(1);
+        graphServiceA.addVertex(2);
+        graphServiceA.addEdge([6, 7]);
+
+        graphServiceB.addVertex(2);
+        graphServiceB.addVertex(3);
+        graphServiceB.addEdge([1, 5]);
+        graphServiceB.addEdge([2, 4]);
+        graphServiceB.addEdge([6, 7]);
+        graphServiceB.removeVertex(2);
+        graphServiceB.removeVertex(4);
+
+        await graphServiceA.merge(graphServiceB);
+
+        expect(graphServiceA.vertexIsExist(1)).toBeTruthy();
+        expect(graphServiceA.vertexIsExist(2)).toBeFalsy();
+        expect(graphServiceA.vertexIsExist(3)).toBeTruthy();
+        expect(graphServiceA.vertexIsExist(4)).toBeFalsy();
+        expect(graphServiceA.vertexIsExist(5)).toBeTruthy();
+        expect(graphServiceA.vertexIsExist(6)).toBeTruthy();
+        expect(graphServiceA.vertexIsExist(7)).toBeTruthy();
+    });
 });
 
 describe('GraphService/edgeIsExist', () => {
@@ -165,6 +192,41 @@ describe('GraphService/edgeIsExist', () => {
         expect(graphService.edgeIsExist([1, 3])).toBeFalsy();
         expect(graphService.edgeIsExist([1, 4])).toBeFalsy();
         expect(graphService.edgeIsExist([3, 4])).toBeFalsy();
+    });
+
+    test('functionality should work after running GraphService/merge', async () => {
+        const graphServiceA = new GraphService();
+        const graphServiceB = new GraphService();
+
+        graphServiceA.addEdge([1, 2]);
+        graphServiceA.addEdge([1, 3]);
+        graphServiceA.addEdge([2, 4]);
+        graphServiceA.addEdge([4, 5]);
+        graphServiceA.removeEdge([1, 2]);
+        graphServiceA.removeEdge([4, 5]);
+
+        graphServiceB.addEdge([1, 5]);
+        graphServiceB.addEdge([2, 6]);
+        graphServiceB.addEdge([3, 4]);
+        graphServiceB.addEdge([3, 2]);
+        graphServiceB.addEdge([1, 7]);
+        graphServiceB.removeEdge([1, 7]);
+        graphServiceB.removeEdge([1, 5]);
+
+        await graphServiceA.merge(graphServiceB);
+
+        expect(graphServiceA.edgeIsExist([1, 2])).toBeFalsy();
+        expect(graphServiceA.edgeIsExist([1, 3])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([2, 4])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([3, 1])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([4, 5])).toBeFalsy();
+        expect(graphServiceA.edgeIsExist([2, 1])).toBeFalsy();
+        expect(graphServiceA.edgeIsExist([1, 5])).toBeFalsy();
+        expect(graphServiceA.edgeIsExist([2, 6])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([3, 4])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([3, 2])).toBeTruthy();
+        expect(graphServiceA.edgeIsExist([1, 7])).toBeFalsy();
+        expect(graphServiceA.edgeIsExist([7, 1])).toBeFalsy();
     });
 });
 
@@ -216,6 +278,25 @@ describe('GraphService/findAllConnectedVertices', () => {
         } catch (err) {
             expect(err).toEqual(GraphServiceError.vertex.findConnectedVertices.vertexIsNotExist);
         }
+    });
+
+    test('functionality should work after running GraphService/merge', async () => {
+        const graphServiceA = new GraphService();
+        const graphServiceB = new GraphService();
+
+        graphServiceA.addEdge([1, 2]);
+        graphServiceA.addEdge([1, 3]);
+        graphServiceA.addEdge([1, 4]);
+        graphServiceA.addEdge([1, 5]);
+        graphServiceA.removeEdge([1, 2]);
+
+        graphServiceB.addEdge([1, 6]);
+        graphServiceB.addEdge([1, 7]);
+        graphServiceB.addEdge([1, 8]);
+        graphServiceB.removeEdge([1, 8]);
+
+        await graphServiceA.merge(graphServiceB);
+        expect(graphServiceA.findAllConnectedVertices(1)).toEqual([3, 4, 5, 6, 7]);
     });
 });
 
@@ -300,9 +381,37 @@ describe('GraphService/findPathBetweenVertices', () => {
         expectedResp.push(10000);
         expect(graphService.findPathBetweenVertices(1, 10000)).toEqual({ find: true, value: expectedResp });
     });
-});
 
-/**
- * @todo function merge() is not implemented yet
- */
-describe('GraphService/merge', () => { });
+    test('functionality should work after running GraphService/merge', async () => {
+        const graphServiceA = new GraphService();
+        const graphServiceB = new GraphService();
+
+        graphServiceA.addEdge([1, 2]);
+        graphServiceA.addEdge([2, 3]);
+        graphServiceA.addEdge([3, 4]);
+        graphServiceA.addEdge([4, 5]);
+        graphServiceA.addEdge([5, 7]);
+        graphServiceA.addEdge([4, 6]);
+        graphServiceA.addEdge([6, 7]);
+
+        graphServiceB.addEdge([1, 5]);
+        graphServiceB.addEdge([5, 7]);
+        graphServiceB.removeEdge([5, 7]);
+
+        expect(graphServiceA.findPathBetweenVertices(1, 7).find).toBeTruthy();
+        expect(graphServiceA.findPathBetweenVertices(1, 7).value).toEqual([1, 2, 3, 4, 6, 7]);
+
+        await graphServiceA.merge(graphServiceB);
+
+        expect(graphServiceA.findPathBetweenVertices(1, 7).find).toBeTruthy();
+        expect(graphServiceA.findPathBetweenVertices(1, 7).value).toEqual([1, 5, 4, 6, 7]);
+
+        graphServiceA.removeEdge([4, 6]);
+        expect(graphServiceA.findPathBetweenVertices(1, 7).find).toBeFalsy();
+
+        graphServiceB.addEdge([1, 7]);
+        await graphServiceA.merge(graphServiceB);
+        expect(graphServiceA.findPathBetweenVertices(1, 7).find).toBeTruthy();
+        expect(graphServiceA.findPathBetweenVertices(1, 7).value).toEqual([1, 7]);
+    });
+});
