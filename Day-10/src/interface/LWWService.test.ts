@@ -1,7 +1,9 @@
 import { LWWService } from './LWWService';
 
 
-class TestLWWService extends LWWService<number> { }
+class TestLWWService extends LWWService<number> {
+    postMergeFn(): void | Promise<void> { }
+}
 
 describe('LWWService/add' , () => {
     test('should be able to add value into addSet', async () => {
@@ -9,8 +11,8 @@ describe('LWWService/add' , () => {
         lwwService.add(1, 0);
         lwwService.add(2, 1);
 
-        expect(lwwService.addSet.get(1)).toEqual(0);
-        expect(lwwService.addSet.get(2)).toEqual(1);
+        expect(lwwService.LWWSetGet(lwwService.addSet, 1)).toEqual(0);
+        expect(lwwService.LWWSetGet(lwwService.addSet, 2)).toEqual(1);
     });
 
     test('same value should be written as the most recent timestamp in addSet', async () => {
@@ -18,17 +20,17 @@ describe('LWWService/add' , () => {
         lwwService.add(1, 0);
         lwwService.add(1, 1);
 
-        expect(lwwService.addSet.get(1)).toEqual(1);
+        expect(lwwService.LWWSetGet(lwwService.addSet, 1)).toEqual(1);
     });
 
     test('timestamp should be add accordingly adding without parameter in addSet', async () => {
         const lwwService = new TestLWWService();
         lwwService.add(1);
         lwwService.add(2);
-        expect(lwwService.addSet.get(1)).toBeLessThanOrEqual(lwwService.addSet.get(2));
+        expect(lwwService.LWWSetGet(lwwService.addSet, 1)).toBeLessThanOrEqual(lwwService.LWWSetGet(lwwService.addSet, 2));
 
         lwwService.add(1);
-        expect(lwwService.addSet.get(2)).toBeLessThanOrEqual(lwwService.addSet.get(1));
+        expect(lwwService.LWWSetGet(lwwService.addSet, 2)).toBeLessThanOrEqual(lwwService.LWWSetGet(lwwService.addSet, 1));
     });
 });
 
@@ -38,8 +40,8 @@ describe('LWWService/remove' , () => {
         lwwService.remove(1, 0);
         lwwService.remove(2, 1);
 
-        expect(lwwService.removeSet.get(1)).toEqual(0);
-        expect(lwwService.removeSet.get(2)).toEqual(1);
+        expect(lwwService.LWWSetGet(lwwService.removeSet, 1)).toEqual(0);
+        expect(lwwService.LWWSetGet(lwwService.removeSet, 2)).toEqual(1);
     });
 
     test('same value should be written as the most recent timestamp in removeSet', async () => {
@@ -47,17 +49,17 @@ describe('LWWService/remove' , () => {
         lwwService.remove(1, 0);
         lwwService.remove(1, 1);
 
-        expect(lwwService.removeSet.get(1)).toEqual(1);
+        expect(lwwService.LWWSetGet(lwwService.removeSet, 1)).toEqual(1);
     });
 
     test('timestamp should be add accordingly adding without parameter in removeSet', async () => {
         const lwwService = new TestLWWService();
         lwwService.remove(1);
         lwwService.remove(2);
-        expect(lwwService.removeSet.get(1)).toBeLessThanOrEqual(lwwService.removeSet.get(2));
+        expect(lwwService.LWWSetGet(lwwService.removeSet, 1)).toBeLessThanOrEqual(lwwService.LWWSetGet(lwwService.removeSet, 2));
 
         lwwService.remove(1);
-        expect(lwwService.removeSet.get(2)).toBeLessThanOrEqual(lwwService.removeSet.get(1));
+        expect(lwwService.LWWSetGet(lwwService.removeSet, 2)).toBeLessThanOrEqual(lwwService.LWWSetGet(lwwService.removeSet, 1));
     });
 });
 
@@ -170,17 +172,6 @@ describe('LWWService/merge' , () => {
 
         lwwServiceA.merge(lwwServiceB);
 
-        const expectedMergedAddSet = new Map<number, number>(
-            [[1, 0], [2, 0], [3, 0], [4, 1], [5, 2], [6, 12], [7, 7], [9, 15]]
-        );
-
-        const expectedMergedRemoveSet = new Map<number, number>(
-            [[5, 3], [1, 17], [2, 15]]
-        )
-
-        expect(lwwServiceA.addSet).toStrictEqual(expectedMergedAddSet);
-        expect(lwwServiceA.removeSet).toStrictEqual(expectedMergedRemoveSet);
-
         expect(lwwServiceA.lookup(1)).toBeFalsy();
         expect(lwwServiceA.lookup(2)).toBeFalsy();
         expect(lwwServiceA.lookup(3)).toBeTruthy();
@@ -189,5 +180,18 @@ describe('LWWService/merge' , () => {
         expect(lwwServiceA.lookup(6)).toBeTruthy();
         expect(lwwServiceA.lookup(7)).toBeTruthy();
         expect(lwwServiceA.lookup(9)).toBeTruthy();
+
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 1)).toEqual(0);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 2)).toEqual(0);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 3)).toEqual(0);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 4)).toEqual(1);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 5)).toEqual(2);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 6)).toEqual(12);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 7)).toEqual(7);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.addSet, 9)).toEqual(15);
+
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.removeSet, 5)).toEqual(3);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.removeSet, 1)).toEqual(17);
+        expect(lwwServiceA.LWWSetGet(lwwServiceA.removeSet, 2)).toEqual(15);
     });
 });
