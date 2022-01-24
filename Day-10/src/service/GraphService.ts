@@ -5,6 +5,7 @@ import { Edge, Vertex } from '../models';
 
 /**
  * @description GraphService provides a graph constructed by vertices and edges.
+ * @todo update documents
  * @example
  * ```ts
  * const graphService = new GraphService();
@@ -45,7 +46,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
      * @description GraphService stores its vertex and edge in attribute `graph`.
      * Vertex: the key of record represents an existing vertex.
      * Edge: any of two vertices have each other in their set<number> regard they have edge between each other.
-     * 
+     * @todo update documents
      * @example
      * {
      *   1: Set<[2]>,
@@ -61,6 +62,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description add a vertex into the graph. Error will be thrown if the given vertex already exist.
+     * @todo update documents
      * @param vertex - `required`. Error will be thrown if:
      *  1. the given vertex already exists
      *  2. the given vertex is NaN
@@ -78,6 +80,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description add an edge into the graph
+     * @todo update documents
      * @param edge - `required`. Error will be thrown if:
      *  1. the given edge has two equal vertices
      *  2. the given edge contains at least one NaN
@@ -101,6 +104,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description remove an existing vertex.
+     * @todo update documents
      * @param vertex - `required`. Error will be thrown if:
      *  1. vertex is not exist 
      */
@@ -121,6 +125,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description remove an existing edge.
+     * @todo update documents
      * @param edge - `required`. Error will be thrown if:
      *  1. edge is not exist
      */
@@ -200,6 +205,9 @@ export class GraphService extends LWWService<Vertex | Edge> {
         return { find: false };
     }
 
+    /**
+     * @todo update documents
+     */
     postMergeFn(): void | Promise<void> {
         this.graph = [];
         for (let [element, _] of this.addSet) {
@@ -214,8 +222,18 @@ export class GraphService extends LWWService<Vertex | Edge> {
         }
     }
 
+    /**
+     * @todo update documents
+     * @param obj
+     * @returns 
+     */
     private isVertex = (obj: any) => typeof(obj) === 'number';
 
+    /**
+     * @todo update documents
+     * @param obj 
+     * @returns 
+     */
     private isEdge =(obj: any): boolean => 
         Array.isArray(obj) && obj.length === 2 && typeof(obj[0]) === 'number' && typeof(obj[1]) === 'number';
 }

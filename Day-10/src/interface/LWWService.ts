@@ -1,9 +1,26 @@
+/**
+ * @todo update documents
+ */
 type Timestamp = number;
 
+
+/**
+ * @todo update documents
+ */
 type LWWSet<T> = Map<T, Timestamp>;
 
+/**
+ * @todo update documents
+ */
 export abstract class LWWService<T> {
+    /**
+     * @todo update documents
+     */
     addSet: LWWSet<string>;
+
+    /**
+     * @todo update documents
+     */
     removeSet: LWWSet<string>;
 
     constructor() {
@@ -11,6 +28,11 @@ export abstract class LWWService<T> {
         this.removeSet = new Map<string, Timestamp>();
     }
 
+    /**
+     * @todo update documents
+     * @param obj 
+     * @param timestamp 
+     */
     add(obj: T, timestamp: Timestamp = undefined) {
         timestamp = timestamp ?? Date.now();
         if (this.LWWSetHas(this.addSet, obj)) {
@@ -23,6 +45,11 @@ export abstract class LWWService<T> {
         }
     }
 
+    /**
+     * @todo update documents
+     * @param obj 
+     * @param timestamp 
+     */
     remove(obj: T, timestamp: Timestamp = undefined) {
         timestamp = timestamp ?? Date.now();
         if (this.LWWSetHas(this.removeSet, obj)) {
@@ -34,12 +61,22 @@ export abstract class LWWService<T> {
         }
     }
 
+    /**
+     * @todo update documents
+     * @param obj 
+     * @returns 
+     */
     lookup(obj: T): boolean {
         if (!this.LWWSetHas(this.addSet, obj)) { return false; }
         if (!this.LWWSetHas(this.removeSet, obj)) { return true;}
         return this.LWWSetGet(this.removeSet, obj) < this.LWWSetGet(this.addSet, obj);
     }
 
+    /**
+     * @todo update documents
+     * @param other 
+     * @returns 
+     */
     compare(other: LWWService<T>): boolean {
 
         for (const prop of this.addSet.keys()) {
@@ -53,6 +90,10 @@ export abstract class LWWService<T> {
         return true;
     }
 
+    /**
+     * @todo update documents
+     * @param other 
+     */
     async merge(other: LWWService<T>) {
 
         const mergeSet = (a: LWWSet<string>, b: LWWSet<string>): LWWSet<string> => {
@@ -76,14 +117,36 @@ export abstract class LWWService<T> {
         await this.postMergeFn();
     }
 
+    /**
+     * @todo update documents
+     */
     abstract postMergeFn(): void | Promise<void>;
 
+    /**
+     * @todo update documents
+     * @param set 
+     * @param obj 
+     * @returns 
+     */
     LWWSetHas = (set: LWWSet<string>, obj: T | string): boolean => 
         typeof(obj) === 'string' ? set.has(obj) : set.has(JSON.stringify(obj));
     
+    /**
+     * @todo update documents
+     * @param set 
+     * @param obj 
+     * @param value 
+     * @returns 
+     */
     LWWSetSet = (set: LWWSet<string>, obj: T | string, value: Timestamp) => 
         typeof(obj) === 'string' ? set.set(obj, value) : set.set(JSON.stringify(obj), value);
 
+    /**
+     * @todo update documents
+     * @param set 
+     * @param obj 
+     * @returns 
+     */
     LWWSetGet = (set: LWWSet<string>, obj: T | string): Timestamp => 
         typeof(obj) === 'string' ? set.get(obj) : set.get(JSON.stringify(obj));
 }
