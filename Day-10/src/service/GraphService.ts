@@ -5,7 +5,14 @@ import { Edge, Vertex } from '../models';
 
 /**
  * @description GraphService provides a graph constructed by vertices and edges.
- * @todo update documents
+ * Noted that GraphService as a class inherit from LWWService, the following method will be recorded as a state change:
+ * - addVertex
+ * - addEdge
+ * - removeVertex
+ * - removeEdge
+ * 
+ * All the data is immutable (from service's perspective) once the function `LWWService.merge` is been called.
+ * 
  * @example
  * ```ts
  * const graphService = new GraphService();
@@ -38,6 +45,10 @@ import { Edge, Vertex } from '../models';
  * // find a path from given params `from` to `to`
  * graphService.addEdge([4, 5]);
  * graphService.findPathBetweenVertices(5, 1); // [5, 4, 1]
+ * 
+ * // merge with other graphService
+ * const graphServiceB = new GraphService();
+ * await graphService.merge(graphServiceB);
  * ```
  */
 export class GraphService extends LWWService<Vertex | Edge> {
@@ -46,7 +57,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
      * @description GraphService stores its vertex and edge in attribute `graph`.
      * Vertex: the key of record represents an existing vertex.
      * Edge: any of two vertices have each other in their set<number> regard they have edge between each other.
-     * @todo update documents
+     * 
      * @example
      * {
      *   1: Set<[2]>,
@@ -62,10 +73,10 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description add a vertex into the graph. Error will be thrown if the given vertex already exist.
-     * @todo update documents
      * @param vertex - `required`. Error will be thrown if:
      *  1. the given vertex already exists
      *  2. the given vertex is NaN
+     * @param saveState - `optional`. To indicate whether the state should be stored in the LWWset
      */
     addVertex(vertex: Vertex, saveState: boolean = true) {
         if (isNaN(vertex)) { throw GraphServiceError.vertex.add.isNaN; }
@@ -80,11 +91,11 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description add an edge into the graph
-     * @todo update documents
      * @param edge - `required`. Error will be thrown if:
      *  1. the given edge has two equal vertices
      *  2. the given edge contains at least one NaN
      *  3. the given edge already exists
+     * @param saveState - `optional`. To indicate whether the state should be stored in the LWWset
      */
     addEdge(edge: Edge, saveState: boolean = true) {
         if (edge[0] === edge[1]) { throw GraphServiceError.edge.add.shouldHaveDifferentVertex; }
@@ -104,9 +115,9 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description remove an existing vertex.
-     * @todo update documents
      * @param vertex - `required`. Error will be thrown if:
      *  1. vertex is not exist 
+     * @param saveState - `optional`. To indicate whether the state should be stored in the LWWset
      */
     removeVertex(vertex: Vertex, saveState: boolean = true) {
         if (!this.vertexIsExist(vertex)) { throw GraphServiceError.vertex.remove.vertexNotFound; }
@@ -125,9 +136,9 @@ export class GraphService extends LWWService<Vertex | Edge> {
 
     /**
      * @description remove an existing edge.
-     * @todo update documents
      * @param edge - `required`. Error will be thrown if:
      *  1. edge is not exist
+     * @param saveState - `optional`. To indicate whether the state should be stored in the LWWset
      */
     removeEdge(edge: Edge, saveState: boolean = true) {
         if (!this.edgeIsExist(edge)) { throw GraphServiceError.edge.remove.edgeIsNotExist; }
@@ -206,7 +217,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
     }
 
     /**
-     * @todo update documents
+     * @description once the LWWService.merge is called, the GraphService will automatically update its' graph
      */
     postMergeFn(): void | Promise<void> {
         this.graph = [];
@@ -223,16 +234,16 @@ export class GraphService extends LWWService<Vertex | Edge> {
     }
 
     /**
-     * @todo update documents
-     * @param obj
-     * @returns 
+     * @description to identify an object is a Vertex
+     * @param obj - `required`. Object which requires to check
+     * @returns true if the given `obj` is a Vertex
      */
     private isVertex = (obj: any) => typeof(obj) === 'number';
 
     /**
-     * @todo update documents
-     * @param obj 
-     * @returns 
+     * @description to identify an object is an edge
+     * @param obj - `required`. Object which requires to check
+     * @returns true if the given `obj` is an Edge
      */
     private isEdge =(obj: any): boolean => 
         Array.isArray(obj) && obj.length === 2 && typeof(obj[0]) === 'number' && typeof(obj[1]) === 'number';
