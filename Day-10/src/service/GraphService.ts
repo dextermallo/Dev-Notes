@@ -153,9 +153,7 @@ export class GraphService extends LWWService<Vertex | Edge> {
      * @param vertex - `required`.
      * @returns true if a vertex is exist
      */
-    vertexIsExist(vertex: Vertex): boolean {
-        return this.graph[vertex] !== undefined;
-    }
+    vertexIsExist(vertex: Vertex): boolean { return this.graph[vertex] !== undefined; }
 
     /**
      * 
@@ -163,12 +161,8 @@ export class GraphService extends LWWService<Vertex | Edge> {
      * @returns true if an edge is exist
      */
     edgeIsExist(edge: Edge): boolean {
-        if (!this.vertexIsExist(edge[0]) || !this.vertexIsExist(edge[1])) {
-            return false;
-        }
-        if (!this.graph[edge[0]].has(edge[1]) || !this.graph[edge[1]].has(edge[0])) {
-            return false;
-        }
+        if (!this.vertexIsExist(edge[0]) || !this.vertexIsExist(edge[1])) { return false; }
+        if (!this.graph[edge[0]].has(edge[1]) || !this.graph[edge[1]].has(edge[0])) { return false; }
         return true;
     }
 
