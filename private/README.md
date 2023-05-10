@@ -1,0 +1,1 @@
+nmap -Pn -sC -sV -oA tcp -p- -T4 -vvvvv --reason
