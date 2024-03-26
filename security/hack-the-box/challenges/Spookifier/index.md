@@ -8,7 +8,6 @@ tags: ['Web', 'SSTI', 'HackTheBox']
 
 ## 0. Analysis
 
-
 ### 0.1. Playaround
 > Take a glance at the web server. An textbox with inputs that will send a query and outputs in the table.
 
